@@ -14,12 +14,10 @@ public final class SourceRegistry {
                 "Requires a user-provided RSS URL exposed by that user's Google Alerts account.");
         register(CollectorSource.WORDPRESS, CapabilityStatus.AVAILABLE,
                 "Consumes a public RSS or Atom URL supplied by the user, if the site publishes one.");
-        register(CollectorSource.REDDIT, CapabilityStatus.UNAVAILABLE,
-                "External Data API access requires Reddit-provided access information and approval; no tokenless collector is enabled.");
+        register(CollectorSource.REDDIT, CapabilityStatus.CONDITIONAL,
+                "Official OAuth collector; disabled until Reddit Data API access is approved and OAuth credentials are configured.");
         register(CollectorSource.ISSUU, CapabilityStatus.UNVERIFIED,
                 "No official public tokenless feed or API contract has been verified.");
-        register(CollectorSource.MERCADO_LIVRE, CapabilityStatus.UNAVAILABLE,
-                "The official API authentication flow requires OAuth access tokens; no anonymous marketplace scraping is enabled.");
     }
 
     public SourceCapability get(CollectorSource source) {
