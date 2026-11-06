@@ -5,6 +5,5 @@ public enum CollectorSource {
     GOOGLE_ALERTS,
     REDDIT,
     ISSUU,
-    WORDPRESS,
-    MERCADO_LIVRE
+    WORDPRESS
 }
