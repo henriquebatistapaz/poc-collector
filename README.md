@@ -1,19 +1,45 @@
 # Multi-Source Collector Mini
 
-Private, specification-first mini project for collecting public links and metadata from six sources: Google News, Google Alerts, Reddit, Issuu, WordPress, and Mercado Livre.
+Private Java 21 / Maven command-line collector for public RSS and Atom links. The initial implementation reads Google News search RSS, a user-provided Google Alerts RSS URL, and public WordPress RSS/Atom feeds. Every returned item contains only source, stable ID, title, link, and timestamps.
 
-The project is intentionally not implemented yet. The initial deliverable is the scope and feasibility specification in [SPEC.md](SPEC.md). It distinguishes sources with a documented public feed from sources that need a policy or access feasibility check before code is written.
+## Build and tests
 
-## Privacy and access
+```bash
+mvn test
+mvn package
+```
 
+## Run
 
-"No API token" does not always mean "no account setup": a Google Alerts RSS URL, if available in the account, may grant access to the configured alert and must be treated as a secret.
+```bash
+java -jar target/multi-source-collector-mini-0.1.0-SNAPSHOT.jar google-news "open data Brazil"
+```
 
-## Project status
+For Google Alerts, create and configure an alert in the Google account first, then provide its RSS feed URL through the environment. The URL is a secret and must not be stored in shell history, Git, logs, or screenshots.
 
-- Specification: drafted.
-- Source adapters: not implemented.
-- Storage, scheduling, API, and messaging: not implemented.
-- Next step: approve the feasibility spike and first source slice before implementation.
+```bash
+read -s GOOGLE_ALERTS_FEED_URL
+export GOOGLE_ALERTS_FEED_URL
+java -jar target/multi-source-collector-mini-0.1.0-SNAPSHOT.jar google-alerts
+unset GOOGLE_ALERTS_FEED_URL
+```
 
-See [TODO.md](TODO.md) for the staged work.
+For a public WordPress feed:
+
+```bash
+export WORDPRESS_FEED_URL='https://wordpress.org/news/feed/'
+java -jar target/multi-source-collector-mini-0.1.0-SNAPSHOT.jar wordpress
+unset WORDPRESS_FEED_URL
+```
+
+The program prints a JSON array of normalized feed items to stdout. Google Alerts fetch/parse errors omit the secret URL. Feed requests have timeouts, a 1 MB response cap, and redirects disabled. WordPress URLs must use HTTPS and resolve only to public IP addresses.
+
+## Source status
+
+- **Google News:** implemented using its observed search RSS URL shape. Google does not provide an official API contract for this endpoint, so behavior may change.
+- **Google Alerts:** implemented only for a user-supplied feed URL if the user's account exposes one. Current Google help describes email alerts but does not document RSS delivery; no account feed URL is included in this repository.
+- **WordPress:** implemented using public RSS or Atom feeds supplied by the user.
+- **Reddit:** disabled. External API access requires Reddit-provided access information and approval; this project does not scrape Reddit pages.
+- **Issuu:** unavailable until an official permitted tokenless feed/API contract is verified.
+- **Mercado Livre:** disabled for the tokenless scope; the official API requires OAuth access tokens, and marketplace pages are not scraped.
+
