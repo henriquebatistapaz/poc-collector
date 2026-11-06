@@ -100,7 +100,7 @@ Implemented: Google News and Google Alerts (conditional) plus WordPress RSS/Atom
 
 ### Phase 2 — Reddit OAuth (implemented, platform approval pending)
 
-The OAuth client and post reader are implemented and locally tested. Live collection remains blocked until the owner has Reddit Data API access approval, registers an application, and supplies runtime secrets. Issuu stays unverified until an official permitted route is found. Mercado Livre has been removed from the project scope.
+The OAuth client and post reader are implemented and locally tested. Live collection remains blocked until the owner has Reddit Data API access approval, registers an application, and supplies runtime secrets. Issuu stays unverified until an official permitted route is found.
 
 ### Phase 3 — API and persistence
 
@@ -110,7 +110,6 @@ Define a small OpenAPI contract and persistence model only after collection beha
 
 - All five in-scope sources appear in the capability matrix with a route assessment and an implementation gate.
 - Reddit OAuth uses only approved, officially issued credentials and remains disabled until approval is configured.
-- Mercado Livre does not appear in the product scope or implementation.
 - No credentials or real private feed URL are included.
 - Local JUnit tests cover parsing, URL validation, collector query construction, secret URL redaction, and source gating.
 - A first implementation slice cannot begin until source feasibility and scope are approved.
