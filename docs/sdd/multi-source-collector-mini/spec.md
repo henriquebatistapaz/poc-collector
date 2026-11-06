@@ -106,7 +106,7 @@ Define a small OpenAPI contract and persistence model only after collection beha
 - All six requested sources appear in the capability matrix with a route assessment and an implementation gate.
 - The spec makes no promise of tokenless access where official evidence is absent or access is restricted.
 - No implementation code, credentials, or real private feed URL is included.
-- The repository remains private; `/docs/` and AI-Ready generated files are ignored by Git.
+- The repository remains private; `/docs/` and AI-Init generated files are ignored by Git.
 - A first implementation slice cannot begin until source feasibility and scope are approved.
 
 ## 9. References
