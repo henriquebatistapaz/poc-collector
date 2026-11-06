@@ -1,19 +1,18 @@
 # Multi-Source Collector Mini — Initial Specification
 
-**Status:** Initial implementation delivered for Google News, Google Alerts (conditional), and WordPress
+**Status:** Initial implementation delivered for Google News, Google Alerts, WordPress, and conditional Reddit OAuth
 **Repository:** Private  
 **Scope:** Minimal RSS/Atom CLI collection for permitted feed sources; the other sources remain access-gated.
 
 ## 1. Purpose
 
-Define a small, private service that discovers and collects public links and limited metadata from six requested sources:
+Define a small, private service that discovers and collects public links and limited metadata from five requested sources:
 
 1. Google News
 2. Google Alerts
 3. Reddit
 4. Issuu
 5. WordPress
-6. Mercado Livre
 
 The service must use only access methods that are currently documented or explicitly permitted. A requested source is not a promise that anonymous collection is technically available or allowed. If a source requires a token, written permission, or a platform-approved integration, its anonymous connector must remain disabled instead of bypassing the restriction.
 
@@ -25,7 +24,7 @@ The service must use only access methods that are currently documented or explic
 - Public links and the minimum metadata needed to identify and deduplicate a result.
 - Per-source feasibility checks before implementation.
 - Respect for source terms, robots rules, rate limits, privacy, and content removal requests.
-- A future Java 21, Spring Boot, Maven implementation, following the existing private mini-project conventions.
+- A Java 21 / Maven implementation, following the existing private mini-project conventions.
 
 ### Out of scope for this initial implementation slice
 
@@ -36,16 +35,15 @@ The service must use only access methods that are currently documented or explic
 
 ## 3. Source feasibility matrix
 
-| Source | Requested tokenless route | Current assessment | Implementation gate |
+| Source | Access route | Current assessment | Implementation gate |
 |---|---|---|---|
 | WordPress | Public RSS 2.0 / Atom feeds exposed by a site | **Implemented.** WordPress documents built-in feeds; a site may disable or restrict them. | User supplies a public HTTPS feed URL; reject private network destinations and redirects. |
 | Google News | Public RSS search feed | **Implemented as conditional.** The observed RSS search route has no official Google API contract and may change. | Use the fixed Google News RSS host and query parameters only; do not scrape HTML. Recheck behavior before production use. |
 | Google Alerts | RSS delivery for a user-configured alert | **Implemented as conditional.** Current official help documents email alerts but does not document RSS delivery. | Accept only a feed URL explicitly obtained by the user from their account. Treat it as a secret; never commit, return, or log it. |
-| Reddit | Anonymous public feed or other no-token route | **Not cleared.** Reddit's current User Agreement prohibits collection except as permitted and prohibits scraping without prior written consent. Data API access uses the supplied access information (for example, OAuth tokens). | Do not implement anonymous scraping. Revisit only if an official permitted no-token feed is confirmed in writing/documentation; otherwise mark unavailable. |
+| Reddit | Official Data API using OAuth | **Conditional.** Reddit requires an approved developer app, registered OAuth, a descriptive User-Agent, and compliance with current Data API terms and rate limits. | Implement OAuth refresh-token auth and the official API reader. Keep disabled unless Reddit access approval and valid app credentials are configured. Never scrape HTML or bypass an approval denial. |
 | Issuu | Anonymous public feed/API | **Unverified.** No official, stable tokenless feed or API contract has been established for this project. | Research official documentation and terms first. No HTML scraping or hidden endpoints; mark unavailable if no permitted route exists. |
-| Mercado Livre | Anonymous public search/API | **No tokenless official API route established.** Mercado Livre's API authentication guidance describes OAuth authorization and access tokens. Public website pages are not an API permission. | Do not scrape the marketplace. Revisit only if official docs confirm an anonymous public endpoint and permitted use. |
 
-**Meaning of “tokenless”:** no API token or OAuth credential is sent by the collector. It does not waive a source's terms, account setup, explicit consent, or access restrictions. The Google Alerts feed URL is a bearer-like secret even if it is not an OAuth token.
+**Access modes:** Google News and user-supplied RSS/Atom feeds use public feeds. Reddit is the explicit OAuth exception to the original tokenless preference. OAuth credentials and Google Alerts feed URLs are secrets; OAuth does not replace Reddit's access approval or terms.
 
 ## 4. Functional requirements
 
@@ -59,6 +57,10 @@ Future implementation must:
 - Stop a connector after access denial, robots prohibition, repeated throttling, or a policy-related response; do not retry aggressively.
 - Allow each connector to be disabled without affecting other permitted sources.
 - Record enough status and error information to diagnose a feed without logging credentials, cookies, alert feed URLs, or full content.
+- The Reddit adapter must require explicit approval configuration, client ID/secret, a refresh token, and a truthful descriptive User-Agent before making any collection request.
+- The OAuth bootstrap must build a consent URL with cryptographically random state, the `read` scope only, and permanent access; compare callback state in constant time before exchanging authorization codes through Reddit's token endpoint.
+- Use OAuth token refresh and the official `oauth.reddit.com` API host; never scrape Reddit HTML. Keep credentials and returned tokens redacted from string representations and logs.
+- Keep Reddit access disabled by default. Reddit's external Data API access and app review are platform gates that the code cannot grant.
 
 ## 5. Non-functional and safety requirements
 
@@ -77,8 +79,9 @@ Future implementation must:
 - **Connector interface:** validates configuration, fetches within configured limits, and returns normalized candidates.
 - **Feed parser:** secure JDK StAX parser for RSS and Atom, with DTD/external entities disabled, item links restricted to HTTP(S), and a 100-item cap.
 - **Fetch client:** JDK HTTP client with 5-second connect timeout, 10-second request timeout, 1 MB response cap, and redirects disabled.
-- **Source collectors:** Google News search RSS, account-provided Google Alerts RSS URL (conditional), and user-provided public WordPress RSS/Atom URL.
-- **Source registry/service:** reports capability and prevents collection from Reddit, Issuu, and Mercado Livre while their access routes remain unapproved/unverified.
+- **Source collectors:** Google News search RSS, account-provided Google Alerts RSS URL (conditional), user-provided public WordPress RSS/Atom URL, and Reddit Data API OAuth reader (conditional).
+- **Reddit OAuth:** creates a `read`-only permanent-consent URL with random state, exchanges a user authorization code, then reads client ID, client secret, refresh token, approval flag, and Reddit username from the runtime environment/secret store; refreshes access tokens in memory; sends a truthful descriptive User-Agent; performs no HTML scraping.
+- **Source registry/service:** reports capability and prevents collection from Reddit until access approval and credentials are configured; Issuu remains unverified.
 - **Output:** CLI emits a minimal JSON array; no persistence or deduplication store is introduced in this slice.
 - **Storage:** undecided; start in memory only if a first implementation slice is approved. Choose durable storage only after retention and deletion requirements are agreed.
 - **API:** undecided; define endpoints and OpenAPI contract after the first permitted source slice is approved.
@@ -87,7 +90,7 @@ Do not add a message broker to the initial parser/collection slice. ActiveMQ Cla
 
 ## 7. Delivery plan and status
 
-### Phase 0 — Source feasibility (reviewed for the first three feeds)
+### Phase 0 — Source feasibility (reviewed for supported feed and OAuth paths)
 
 Confirm each public access path, the applicable terms/robots rules, response format, rate limits, and a small set of allowed test URLs. No adapter code is written in this phase.
 
@@ -95,9 +98,9 @@ Confirm each public access path, the applicable terms/robots rules, response for
 
 Implemented: Google News and Google Alerts (conditional) plus WordPress RSS/Atom, URL safety checks, deterministic JUnit fixtures, and a CLI. No scheduler, persistence, or external-network-dependent tests.
 
-### Phase 2 — Additional permitted sources (not implemented)
+### Phase 2 — Reddit OAuth (implemented, platform approval pending)
 
-Reddit, Issuu, and Mercado Livre stay disabled until an explicitly permitted tokenless route is verified. OAuth-only access is outside this project's no-token scope.
+The OAuth client and post reader are implemented and locally tested. Live collection remains blocked until the owner has Reddit Data API access approval, registers an application, and supplies runtime secrets. Issuu stays unverified until an official permitted route is found. Mercado Livre has been removed from the project scope.
 
 ### Phase 3 — API and persistence
 
@@ -105,8 +108,9 @@ Define a small OpenAPI contract and persistence model only after collection beha
 
 ## 8. Acceptance criteria and implementation status
 
-- All six requested sources appear in the capability matrix with a route assessment and an implementation gate.
-- The spec makes no promise of tokenless access where official evidence is absent or access is restricted.
+- All five in-scope sources appear in the capability matrix with a route assessment and an implementation gate.
+- Reddit OAuth uses only approved, officially issued credentials and remains disabled until approval is configured.
+- Mercado Livre does not appear in the product scope or implementation.
 - No credentials or real private feed URL are included.
 - Local JUnit tests cover parsing, URL validation, collector query construction, secret URL redaction, and source gating.
 - The repository remains private; `/docs/` and AI-Ready generated files are ignored by Git.
@@ -119,9 +123,9 @@ Define a small OpenAPI contract and persistence model only after collection beha
 - [Google News RSS search route](https://news.google.com/rss/search?q=technology) — observed feed URL example; not an official API reference.
 - [Reddit Data API Terms](https://redditinc.com/policies/data-api-terms) — requires use of access information provided by Reddit.
 - [Reddit external API FAQ](https://developers.reddit.com/docs/guides/faq) — external integrations must follow Data API access guidance and request approval.
+- [Reddit Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki) — requires registered OAuth and a descriptive User-Agent; publishes current rate limits and warns that linked legacy technical guidance may be outdated.
+- [Reddit OAuth2 technical guidance](https://github.com/reddit-archive/reddit/wiki/OAuth2) — OAuth authorization code, access-token, and refresh-token flow; Reddit labels this legacy technical guidance.
 - [Reddit User Agreement](https://redditinc.com/policies/user-agreement) — collection is allowed only under applicable terms; scraping without prior written consent is prohibited.
-- [Reddit Data API Terms](https://redditinc.com/policies/data-api-terms) — governs Data API access and required access information.
-- [Mercado Livre: Authentication and Authorization](https://developers.mercadolivre.com.br/autenticacao-e-autorizacao) — documents OAuth authorization and access tokens.
 - [RFC 4287: The Atom Syndication Format](https://www.rfc-editor.org/rfc/rfc4287) — future parser format reference.
 - [RSS 2.0 Specification](https://www.rssboard.org/rss-specification) — future parser format reference.
 
