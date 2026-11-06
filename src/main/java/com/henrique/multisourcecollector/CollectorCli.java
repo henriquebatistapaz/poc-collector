@@ -11,15 +11,18 @@ public final class CollectorCli {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java -jar multi-source-collector-mini.jar <google-news|google-alerts|wordpress> [query]");
+            System.err.println("Usage: java -jar multi-source-collector-mini.jar <google-news|google-alerts|wordpress|reddit> [query-or-subreddit]");
             System.exit(2);
         }
         var fetcher = new JdkHttpFeedFetcher();
+        var redditTransport = new JdkRedditHttpTransport();
+        var redditConfig = RedditOAuthConfig.fromEnvironment(System.getenv());
         var parser = new RssFeedParser();
         var service = new CollectorService(new SourceRegistry(),
                 new GoogleNewsCollector(fetcher, parser),
                 new GoogleAlertsCollector(fetcher, parser, new GoogleAlertsUrlPolicy()),
-                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy()));
+                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy()),
+                new RedditCollector(redditConfig, new RedditOAuthTokenProvider(redditConfig, redditTransport), redditTransport));
         try {
             CollectorSource source = switch (args[0].toLowerCase()) {
                 case "google-news" -> CollectorSource.GOOGLE_NEWS;
@@ -27,13 +30,13 @@ public final class CollectorCli {
                 case "wordpress" -> CollectorSource.WORDPRESS;
                 case "reddit" -> CollectorSource.REDDIT;
                 case "issuu" -> CollectorSource.ISSUU;
-                case "mercado-livre" -> CollectorSource.MERCADO_LIVRE;
-                default -> throw new IllegalArgumentException("Unknown source. Use google-news, google-alerts, wordpress, reddit, issuu, or mercado-livre.");
+                default -> throw new IllegalArgumentException("Unknown source. Use google-news, google-alerts, wordpress, reddit, or issuu.");
             };
             String input = switch (source) {
                 case GOOGLE_NEWS -> String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
                 case GOOGLE_ALERTS -> requiredEnvironment("GOOGLE_ALERTS_FEED_URL");
                 case WORDPRESS -> requiredEnvironment("WORDPRESS_FEED_URL");
+                case REDDIT -> args.length > 1 ? args[1] : requiredEnvironment("REDDIT_SUBREDDIT");
                 default -> "";
             };
             List<FeedItem> items = service.collect(source, input);
