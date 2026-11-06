@@ -1,6 +1,6 @@
 # Multi-Source Collector Mini
 
-Private Java 21 / Maven command-line collector for public RSS and Atom links. The initial implementation reads Google News search RSS, a user-provided Google Alerts RSS URL, and public WordPress RSS/Atom feeds. Every returned item contains only source, stable ID, title, link, and timestamps.
+Private Java 21 / Maven command-line collector for public RSS/Atom links and approved Reddit Data API results. It reads Google News search RSS, a user-provided Google Alerts RSS URL, public WordPress RSS/Atom feeds, and Reddit posts through official OAuth. Every returned item contains only source, stable ID, title, link, and timestamps.
 
 ## Build and tests
 
@@ -32,6 +32,12 @@ java -jar target/multi-source-collector-mini-0.1.0-SNAPSHOT.jar wordpress
 unset WORDPRESS_FEED_URL
 ```
 
+For Reddit, first request approval for the external Data API integration from Reddit and register an OAuth app. The `RedditOAuthAuthorization` helper builds a user-consent URL with a cryptographically random state, `read`-only scope, and permanent access, and exchanges the returned authorization code for tokens only after constant-time state validation. Configure `REDDIT_API_ACCESS_APPROVED=true`, `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN`, and your Reddit username in `REDDIT_USERNAME` in the local environment/secret store. The collector refreshes access tokens in memory, sends a truthful descriptive User-Agent, redacts token strings, and does not log credentials or tokens. Keep `REDDIT_API_ACCESS_APPROVED=false` until Reddit approves the app/use case.
+
+```bash
+java -jar target/multi-source-collector-mini-0.1.0-SNAPSHOT.jar reddit java
+```
+
 The program prints a JSON array of normalized feed items to stdout. Google Alerts fetch/parse errors omit the secret URL. Feed requests have timeouts, a 1 MB response cap, and redirects disabled. WordPress URLs must use HTTPS and resolve only to public IP addresses.
 
 ## Source status
@@ -39,7 +45,10 @@ The program prints a JSON array of normalized feed items to stdout. Google Alert
 - **Google News:** implemented using its observed search RSS URL shape. Google does not provide an official API contract for this endpoint, so behavior may change.
 - **Google Alerts:** implemented only for a user-supplied feed URL if the user's account exposes one. Current Google help describes email alerts but does not document RSS delivery; no account feed URL is included in this repository.
 - **WordPress:** implemented using public RSS or Atom feeds supplied by the user.
-- **Reddit:** disabled. External API access requires Reddit-provided access information and approval; this project does not scrape Reddit pages.
+- **Reddit:** official OAuth/Data API adapter; disabled until Reddit access approval and valid local credentials are configured. No HTML scraping.
 - **Issuu:** unavailable until an official permitted tokenless feed/API contract is verified.
-- **Mercado Livre:** disabled for the tokenless scope; the official API requires OAuth access tokens, and marketplace pages are not scraped.
 
+
+## Integration planning
+
+This collector remains a standalone source adapter. A future integration with `rss-link-collector-mini` and `social-api-adapter-mini` is being explored in the private `content-collection-hub-mini` repository; its contract and architecture are still undecided.
