@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.henrique</groupId>
-  <artifactId>multi-source-collector-mini</artifactId>
+  <artifactId>collector-mini</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
@@ -31,7 +31,7 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version>
-        <configuration><archive><manifest><mainClass>com.henrique.multisourcecollector.CollectorCli</mainClass></manifest></archive></configuration>
+        <configuration><archive><manifest><mainClass>com.henrique.collector.CollectorCli</mainClass></manifest></archive></configuration>
       </plugin>
     </plugins>
   </build>
