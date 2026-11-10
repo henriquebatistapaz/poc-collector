@@ -15,4 +15,4 @@ Rules: agents NEVER set `Approved`. A spec that needs rework after approval goes
 
 | Spec | Issue | Status | Notes |
 |------|-------|--------|-------|
-| [`multi-source-collector-mini/`](multi-source-collector-mini/spec.md) | — | Draft | Canonical committed spec: [SPEC.md](../../SPEC.md); awaiting owner review |
+| [`poc-multi-source-collector/`](poc-multi-source-collector/spec.md) | — | Draft | Canonical committed spec: [SPEC.md](../../SPEC.md); awaiting owner review |
