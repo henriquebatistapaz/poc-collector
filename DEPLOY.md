@@ -8,7 +8,7 @@ Use JDK 21 e Maven 3.9. Execute os comandos a partir da raiz do repositório.
 
 ```sh
 mvn clean verify
-java -jar target/collector-mini-0.1.0-SNAPSHOT.jar google-news "open data Brazil"
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar google-news "open data Brazil"
 ```
 
 ## Pendências de publicação
