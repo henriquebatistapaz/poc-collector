@@ -4,7 +4,7 @@ CLI Java para coletar links de fontes públicas e da API do Reddit quando autori
 
 ## Validação local
 
-Use JDK 21 e Maven 3.9. Execute os comandos a partir da raiz do repositório.
+Use JDK 27.0.x e Maven 3.9.16. O JAR exige um runtime Java 27 e publica bytecode de release 27. Execute os comandos a partir da raiz do repositório.
 
 ```sh
 mvn clean verify
