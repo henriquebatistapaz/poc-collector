@@ -95,6 +95,7 @@ public final class CollectorStateStore {
 
     private void load() {
         if (!Files.exists(file)) return;
+        boolean cancelledSchedulesFound = false;
         try {
             JsonNode root = mapper.readTree(file.toFile());
             for (JsonNode node : root.path("items")) {
@@ -108,8 +109,13 @@ public final class CollectorStateStore {
                         Instant.parse(node.path("retrievedAt").asText())));
             }
             for (JsonNode node : root.path("feeds")) {
+                CollectorSource source = CollectorSource.valueOf(node.path("source").asText());
+                if (source == CollectorSource.REDDIT) {
+                    cancelledSchedulesFound = true;
+                    continue;
+                }
                 feeds.add(new ScheduledFeed(
-                        node.path("id").asText(), CollectorSource.valueOf(node.path("source").asText()),
+                        node.path("id").asText(), source,
                         node.path("encryptedInput").asText(), node.path("intervalSeconds").asLong(),
                         Instant.parse(node.path("nextRunAt").asText()), node.path("enabled").asBoolean(),
                         node.path("lastStatus").asText("NEVER_RUN")));
@@ -117,6 +123,7 @@ public final class CollectorStateStore {
         } catch (IOException | RuntimeException e) {
             throw new IllegalStateException("Collector data file is invalid; refusing to overwrite it.");
         }
+        if (cancelledSchedulesFound) persist();
     }
 
     private void persist() {

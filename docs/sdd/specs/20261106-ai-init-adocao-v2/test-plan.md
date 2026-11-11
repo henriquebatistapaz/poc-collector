@@ -21,4 +21,4 @@
 5. `gitleaks detect --no-git --source . --redact --no-banner` — nenhuma detecção.
 6. Revisão estática: workflows usam permissões mínimas, mantêm AI review em report-only e ignoram execução de IA sem `ANTHROPIC_API_KEY`; private context é opcional via `AI_INIT_INTERNAL_TOKEN`. Nenhum secret foi criado.
 
-Os checks hospedados do GitHub não reportaram jobs nesta execução. O acesso real ao Reddit permanece fora do teste por depender de aprovação externa e credenciais runtime; o adapter segue fail-closed.
+Os checks hospedados do GitHub não reportaram jobs nesta execução. A integração Reddit foi posteriormente cancelada pelo proprietário em 2026-11-11 e removida; este plano registra a validação anterior ao cancelamento.

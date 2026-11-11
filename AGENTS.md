@@ -8,7 +8,7 @@ The canonical private project context, including SPEC.md, is maintained separate
 
 Standalone Java 27 / Maven command-line collector and local REST service. The runtime uses JDK HttpServer, Jackson, and JUnit 5; it does not use Spring Boot. Source adapters, RSS/Atom parsing, deduplication, local JSON persistence, encrypted schedules, retention, and an authenticated REST/OpenAPI API are implemented.
 
-Enabled sources: Google News search RSS, user-provided Google Alerts RSS where available, and user-supplied public WordPress RSS/Atom. Reddit uses the official OAuth/Data API adapter but remains disabled until external access approval and runtime credentials are available. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
+Enabled sources: Google News search RSS, user-provided Google Alerts RSS where available, and user-supplied public WordPress RSS/Atom. Reddit support was canceled by the owner on 2026-11-11 and its adapter was removed. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
 
 ## Build, test, and run
 
@@ -36,8 +36,8 @@ The API binds to `127.0.0.1:8090` by default. `/health` and `/openapi.json` are 
 
 - Keep source adapters small and registered through `SourceRegistry`.
 - WordPress requests must use HTTPS and public DNS addresses; preserve the DNS rebinding checks and their tests.
-- Treat Google Alerts feed URLs, API keys, OAuth tokens, and encryption keys as secrets. Never store them in Git, shell history, logs, or screenshots.
-- Keep Reddit fail-closed unless `REDDIT_API_ACCESS_APPROVED=true` and valid OAuth credentials are supplied in the local secret store. Do not scrape Reddit.
+- Treat Google Alerts feed URLs, API keys, and encryption keys as secrets. Never store them in Git, shell history, logs, or screenshots.
+- Preserve read access to previously collected Reddit items in existing data files; never add Reddit collection back without a new approved spec.
 - The local JSON store supports one process. Mount a persistent volume for container use; do not share the same data file across processes.
 - Scheduled feed inputs are encrypted with AES-GCM. Preserve the same `COLLECTOR_SECRET_KEY` with its data file; changing it makes stored schedules unreadable.
 - Keep retention configurable and preserve deletion/removal behavior for collected content.
@@ -58,6 +58,6 @@ Workflow: QA review and human approval → test plan → implementation → vali
 
 - Commit secrets, credentials, real feed URLs, or connection strings.
 - Enable a source unless its access route and use are documented and permitted.
-- Bypass Reddit approval, DNS/public-address checks, request timeouts, response-size caps, or redirect restrictions.
+- Bypass DNS/public-address checks, request timeouts, response-size caps, or redirect restrictions.
 - Finish work with failing tests or a broken build.
 - Leave this guide or `docs/wiki/` inaccurate after a change.
