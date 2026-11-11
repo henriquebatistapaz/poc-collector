@@ -1,96 +1,63 @@
-# AGENTS.md — Multi-Source Collector Mini
+# AGENTS.md — Multi-Source Collector
 
-Operational guide for AI agents (Copilot, Claude Code, Codex, Cursor, etc.).
-Detailed context: @README.md @SPEC.md @TODO.md.
+Operational guide for Copilot, Claude Code, Codex, Cursor, and other coding agents.
+Detailed project context: @README.md @TODO.md @docs/sdd/INDEX.md.
+The canonical private project context, including SPEC.md, is maintained separately from this public repository. This repository contains a synced, versioned snapshot of managed AI-init files.
 
-## The project in one line
+## Project summary
 
-Java 27 / Spring Boot 4.1.2 collector library with source adapters, REST/OpenAPI, local persistence, scheduled collection and retention controls.
+Standalone Java 27 / Maven command-line collector and local REST service. The runtime uses JDK HttpServer, Jackson, and JUnit 5; it does not use Spring Boot. Source adapters, RSS/Atom parsing, deduplication, local JSON persistence, encrypted schedules, retention, and an authenticated REST/OpenAPI API are implemented.
 
-## Essential commands
+Enabled sources: Google News search RSS, user-provided Google Alerts RSS where available, and user-supplied public WordPress RSS/Atom. Reddit uses the official OAuth/Data API adapter but remains disabled until external access approval and runtime credentials are available. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
+
+## Build, test, and run
+
+Run the complete verification suite before shipping changes:
 
 ```bash
-# Local infrastructure (if any)
-No project infrastructure is configured yet.
-
-# Full build / dependency sync
-mvn test # doc-check: run
-
-# Build/check a single module (if multi-module — remove otherwise)
-Not applicable; single-project specification stage.
-
-# Tests (always run before considering a task done)
-mvn test # doc-check: run
-
-# Format / lint / type-check (the agent's fast feedback loop — from the harness)
-No formatting or lint harness is installed by owner choice.
-
-# Run locally
-No application entry point exists yet.
+mvn -B -ntp clean verify
 ```
 
+Run the CLI from the packaged JAR:
 
+```bash
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar google-news "open data Brazil"
+```
 
-## Mandatory conventions
+Start the local API:
 
-Use Java 27, Maven, Spring Boot 4.1.2 and JUnit 5. Keep each source behind a small adapter and preserve the safety checks for outbound URLs and credentials.
+```bash
+./scripts/run-api.sh
+```
 
-## Project skills
+The API binds to `127.0.0.1:8090` by default. `/health` and `/openapi.json` are public; `/v1/*` requires a bearer API key. Keep the API loopback-bound for local use. For remote use, put it behind a TLS-terminating reverse proxy before binding it to a network interface.
 
-Recurring procedures specific to this project documented in `.github/skills/`: None yet; there is no implementation code from which to derive project-specific procedures..
+## Runtime and data safety
 
-## Workflow (Spec-Driven Development)
+- Keep source adapters small and registered through `SourceRegistry`.
+- WordPress requests must use HTTPS and public DNS addresses; preserve the DNS rebinding checks and their tests.
+- Treat Google Alerts feed URLs, API keys, OAuth tokens, and encryption keys as secrets. Never store them in Git, shell history, logs, or screenshots.
+- Keep Reddit fail-closed unless `REDDIT_API_ACCESS_APPROVED=true` and valid OAuth credentials are supplied in the local secret store. Do not scrape Reddit.
+- The local JSON store supports one process. Mount a persistent volume for container use; do not share the same data file across processes.
+- Scheduled feed inputs are encrypted with AES-GCM. Preserve the same `COLLECTOR_SECRET_KEY` with its data file; changing it makes stored schedules unreadable.
+- Keep retention configurable and preserve deletion/removal behavior for collected content.
 
-Platform: GitHub (`gh` CLI).
+## Project conventions
 
-Toda spec nasce em `docs/sdd/specs/<YYYYMMDD>-<slug-kebab>/spec.md` (`<YYYYMMDD>` = data da criação, nunca renomeada; `<slug-kebab>` = nome curto) e é registrada no `docs/sdd/INDEX.md`. Specs antigas no formato `docs/sdd/<nome>/` ficaram como ponteiros de compatibilidade.
+Use Java 27, Maven, the JDK HTTP server, and JUnit 5. The project is a single Maven module. Avoid new dependencies unless the SDD justifies them. Follow the existing package boundaries under `com.henrique.collector`.
 
-Work enters from an issue (`/spec-from-issue <url>`), a direct request, or a `/tech-debt`/`/retro`/`/metrics` finding (`/new-spec`) — a trivial bug skips the spec (failing test → fix at the root → validate).
+AI-init managed files are mirrored from the private canonical project context. Update that canonical context first, then sync the mirror and manifest hashes. Do not add private credentials or private-only context to public project documentation.
 
-From the spec on, one funnel: `@qa` review + human approval → `/test-plan` → `/implement-spec` → `/validate-implementation` (gate: ACs, build, `@reviewer`/`@qa`/`@architect`) → `/open-mr` (branch + MR/PR) → CI → human review → merge.
+## Spec-driven workflow
 
-Verdict NOT READY (or blocking findings from any review agent)? `/fix-findings` applies them — at the root, keeping the spec in sync — then the gate runs again. Review agents point; they never edit.
+Create non-trivial work under `docs/sdd/specs/<YYYYMMDD>-<slug>/spec.md`, add its test plan, and register it in `docs/sdd/INDEX.md`. Follow `docs/sdd/TEMPLATE.sdd.md` and `docs/sdd/constitution.md`.
 
-Shortcut: `/next` detects the current state and runs the appropriate step itself, stopping at human gates.
-
-Bug fixes: root cause, not symptom — see the `fix-root-cause` skill before writing any fix.
-
-1. **Spec first**: every non-trivial feature starts with an SDD in `docs/sdd/<name>/spec.md` (one directory per spec, holding spec.md, test-plan.md and other feature artifacts), following `docs/sdd/TEMPLATE.sdd.md`. Register it in `docs/sdd/INDEX.md`. No per-spec prompt files — the cycle prompts take the spec path as input.
-2. **Principles**: honor `docs/sdd/constitution.md` in any plan or implementation.
-3. **Implementation**: follow the SDD plan; validate against the acceptance criteria before finishing (`/implement-spec`).
-4. **Delivery**: `/validate-implementation` must return READY TO SHIP (green build, ACs met, no blockers) before `/open-mr` packages the branch and opens the MR/PR.
-
-## Model routing (cost control)
-
-Available tiers in this team's Copilot/editor: light = GPT-6.1 Luna; standard = GPT-6.1 Sol; heavy = GPT-6 Astra.
-
-Recommended model per step × spec Complexity (S/M/L from the spec header). The agent recommends; the human switches in the model picker:
-
-| Step | S | M | L |
-|---|---|---|---|
-| Spec writing / test plan | light | standard | standard |
-| Implementation | standard | standard | **heavy** |
-| Validation / reviews (@qa @reviewer @architect) | light | standard | **heavy** |
-| Fix findings / root-cause work | standard | standard | **heavy** |
-| Periodic (/metrics /tech-debt /retro) | standard | standard | standard |
-
-Rules of thumb: escalate for REASONING (design, root cause, cross-service contracts), not for typing volume; never downgrade the review below the tier that implemented; in doubt, one tier up — a wrong cheap run costs more than a right expensive one.
-
-## Armadilhas (aprendidas do jeito difícil)
-
-Problemas do projeto que já custaram uma correção. **Leia antes de planejar ou codar** — se a mudança tocar uma área listada aqui, siga a regra e diga isso no plano. Entradas são adicionadas pelo `/fix-findings` e pelo `/retro`.
-
-<!-- Uma linha cada: - **<área>** — <o que quebra e por quê>. Regra: <o que fazer>. (fonte: <spec ou MR/PR>, <AAAA-MM-DD>) -->
-_Nenhuma ainda._
+Workflow: QA review and human approval → test plan → implementation → validation against acceptance criteria → PR → CI and human review → merge. Only a human sets a spec to `Approved`. `/next` may perform the next available step and stops at human gates.
 
 ## Do not
 
-- Do not save specs outside `docs/sdd/`.
-- Do not commit secrets or credentials.
-- Do not introduce new dependencies without justifying them in the corresponding SDD.
-- Do not consider a task done with failing tests or a broken build.
-- Do not leave `docs/wiki/` or this file outdated when a change alters what they describe — doc drift is a bug.
-- Do not enable a source whose no-token access and use are not explicitly documented or permitted.
-- Treat Google Alerts feed URLs as secrets even though they are not OAuth tokens.
-- Keep public collection minimal; retain source attribution and support removal requests.
-- Os arquivos do ai-init (`.ai-init.json`, `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.github/prompts|agents|instructions|skills`) e os docs do ciclo (`docs/sdd`, `docs/wiki`, `docs/ONBOARDING.md`) são links para `../ai-init-internal/poc-collector/` e NÃO são versionados neste repo. Edite normalmente; o commit vai no repo `ai-init-internal`.
+- Commit secrets, credentials, real feed URLs, or connection strings.
+- Enable a source unless its access route and use are documented and permitted.
+- Bypass Reddit approval, DNS/public-address checks, request timeouts, response-size caps, or redirect restrictions.
+- Finish work with failing tests or a broken build.
+- Leave this guide or `docs/wiki/` inaccurate after a change.

@@ -72,7 +72,7 @@ Scheduled source inputs are encrypted at rest. Losing or changing `COLLECTOR_SEC
 - **Reddit:** official OAuth/Data API adapter; disabled until Reddit access approval and valid local credentials are configured. No HTML scraping.
 - **Issuu:** unavailable for public discovery. Issuu's first-party [API SDK](https://github.com/issuu/issuu-api-sdk) uses an account token for authenticated account/publication operations; it does not document an unauthenticated public search/feed API. No scraping or hidden endpoints are used.
 
-See [SPEC.md](SPEC.md) for the source evidence, access limits, and implementation scope. AI-Init files and `/docs/` remain local and ignored.
+The canonical source evidence and capability matrix are maintained in the private ai-init-internal project context. This repository contains a versioned snapshot of managed AI-init files; public setup and runtime behavior are documented here.
 
 ## Integration planning
 
