@@ -4,7 +4,7 @@
 
 - [x] Define the five in-scope sources and mark access feasibility honestly.
 - [x] Set privacy, terms-of-service, robots, rate-limit, and secret-handling constraints.
-- [x] Keep AI-Init generated files and `/docs/` out of Git.
+- [x] Version managed AI-Init assets and public project documentation; keep secrets and runtime data local.
 - [x] Review source capability for the first feed slice; keep undocumented or OAuth-only routes gated.
 
 ## Before implementation
