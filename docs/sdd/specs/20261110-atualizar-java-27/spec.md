@@ -1,11 +1,11 @@
 # SDD: Atualizar poc-collector para Java 27
 
-**Complexity:** M — biblioteca Maven e consumidores que reutilizam o mesmo artefato
+**Complexity:** M — migração coordenada do runtime e das cópias consumidas por projetos relacionados
 **Security-sensitive:** yes — OAuth, URLs externas e credenciais de conectores
 
 ## 1. Contexto
 
-O `pom.xml` compila com `maven.compiler.release=21`. A biblioteca tem adaptadores de fontes, parser RSS e testes de OAuth; é consumida pelo runner e copiada em `poc-dashboard/libs`. Java 27 chegou à disponibilidade geral em 15/09/2026 (build 35) e é a versão estável mais recente em 10/11/2026. É uma versão sem suporte de longo prazo (LTS); acompanhar o prazo de suporte da distribuição e o próximo ciclo de atualização.
+O `pom.xml` compilava com `maven.compiler.release=21`. O projeto é um coletor standalone CLI/API, não uma biblioteca publicada; runner e dashboard mantêm cópias do código e foram validados separadamente. Java 27 chegou à disponibilidade geral em 15/09/2026 (build 35) e é a versão estável mais recente em 10/11/2026. É uma versão sem suporte de longo prazo (LTS); acompanhar o prazo de suporte da distribuição e o próximo ciclo de atualização.
 
 ## 2. Objetivo
 
@@ -15,7 +15,7 @@ Compilar, testar e executar os componentes Java deste repositório no Java 27, p
 
 ### 3.1 Incluído
 
-- `pom.xml`, artefato Maven, adaptadores e testes existentes; coordenar a versão candidata com o runner e o snapshot no dashboard.
+- `pom.xml`, artefato Maven, adaptadores e testes existentes; coordenar o bytecode com as cópias no runner e dashboard.
 - Checagem de compatibilidade, regressão e procedimento de retorno para este repositório.
 
 ### 3.2 Fora de escopo
@@ -72,6 +72,15 @@ Registrar a versão do JDK e o resultado das verificações no PR de implementa�
 | Autorização e exposição | Uma atualização de dependência ou imagem pode mudar controles de acesso ou exposição. | Preservar a configuração de segurança e checar os fluxos protegidos existentes. Sem controle de acesso no componente, verificar que a exposição não aumentou. | AC-03 |
 | Dados pessoais | Dados reais podem entrar em evidências ou logs de smoke. | Usar apenas fixtures e ambientes isolados; revisar os logs. | AC-03 |
 | Segredos | Credenciais podem vazar nos comandos ou artefatos de verificação. | Manter credenciais de teste fora dos arquivos versionados e omitir valores das evidências. | AC-03 |
+
+## 9.2 Evidência da candidata Java 27 — 11/11/2026
+
+- Baseline origin/develop: acc7df634df1e5ce84d381b904b5c3e346230f63; candidata local: dc9306b060bad64863f3ecf853cc59681b586f0d.
+- Ambiente: OpenJDK 27.0.1.0.3 (Homebrew), Maven 3.10.0; classes verificadas em major version 71.
+- JDK 21 baseline: 41 testes, 0 falhas/erros, 0 ignorados. Candidata Java 27: 41 testes, 0 falhas/erros, 0 ignorados; clean install concluído.
+- POM em release 27 e compiler plugin 3.16.0; README/DEPLOY atualizados.
+- Gates pendentes: AC-03: medição operacional de portas/binds não feita. AC-04: baseline JDK 21 passou, mas rollback pós-candidata não foi executado. Não construí imagens nem rodei postgres-it porque o daemon Docker não está disponível; o plano lista os critérios parciais.
+- Evidências e comandos: [test-plan.md](test-plan.md).
 
 ## 10. Retorno
 

@@ -61,6 +61,15 @@ Agent MRs *look* better than human MRs — clean, consistent, well-described. Th
 - **Bug fixes: demand the root cause.** A fix that only adds a null check / defensive guard at the crash site is treating the symptom — ask "where does the bad value come from?" (`@architect` and the `fix-root-cause` skill enforce this on the agent side; you enforce it on the approval side).
 - **Time check**: if your review took less time than reading the description, you didn't review.
 
+### The AI review comment and the guardrails
+
+- The 🤖 **AI review** comment on the MR/PR (if installed) is a first pass, not an approval. Use its AC → test table as a starting point and open the evidence yourself — the gate is still yours. A `needs-human-review` label means the change touches a sensitive area: read that part line by line.
+- **Guardrails** (`.ai-init/hooks/`): run `bash .ai-init/hooks/guard.sh install-git-hook` once per clone. If a rule blocks legitimate work, change `guard.conf` in its own MR — a rule bypassed "just this once" is a rule that no longer exists.
+
+### Labelling an issue `ai-task` (if the automation is installed)
+
+The label starts an unattended implementation of the spec the issue cites — but only of an `Approved` one. That makes **Gate 1 the real control**: approving a spec now means "an agent may build this without anyone watching". Approve only what you would hand to a new colleague with no questions. The PR that comes back gets the same Gate 2 review as any other.
+
 ## Warning signs the process is degrading
 
 - You approve specs/MRs without ever requesting changes ← the gate is dead, not the work perfect
