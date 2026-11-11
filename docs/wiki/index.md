@@ -1,5 +1,7 @@
-# Project Wiki — Multi-Source Collector Mini
+# Project Wiki — Multi-Source Collector
 
-The project is at specification stage. See the committed [SPEC.md](../../SPEC.md) for the capability matrix and phased plan.
+The collector has a Java 27 CLI and a local authenticated REST service. It supports Google News search RSS, user-provided Google Alerts RSS where available, and public WordPress RSS/Atom. Reddit's official OAuth adapter remains disabled pending external API approval and credentials. Issuu public discovery is unavailable, so that source remains disabled.
+
+The private capability matrix and source evidence live in the canonical project context. This repository's README documents the public setup and runtime behavior.
 
 - [Architecture overview](architecture-overview.md)

@@ -1,7 +1,6 @@
 # AI review on every PR — applied by the ai-init agent (Phase 4, if accepted).
 # Target file: .github/workflows/ai-review.yml
-# Placeholders {{...}} must be resolved at install time; comments marked [agent]
-# tell the ai-init agent what to decide based on the target project.
+# Template choices are resolved for this repository; [agent] comments explain project-specific decisions.
 #
 # What it does, per PR:
 #   guard   — deterministic path rules (secrets committed, applied migration edited). Fails the check.
@@ -59,11 +58,50 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check access to shared ai-init context
+        id: context_access
+        env:
+          AI_INIT_INTERNAL_TOKEN: ${{ secrets.AI_INIT_INTERNAL_TOKEN }}
+        run: |
+          if [ -n "$AI_INIT_INTERNAL_TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"
+          else echo "available=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.context_access.outputs.available == 'true'
+        with:
+          repository: henriquebatistapaz/ai-init-internal
+          token: ${{ secrets.AI_INIT_INTERNAL_TOKEN }}
+          path: ai-init-internal
+      - name: Load centrally managed project context
+        if: steps.context_access.outputs.available == 'true'
+        run: |
+          cp ai-init-internal/poc-collector/AGENTS.md AGENTS.md
+          cp ai-init-internal/poc-collector/SPEC.md SPEC.md
+          mkdir -p .github docs
+          cp -R ai-init-internal/poc-collector/.github/prompts .github/
+          cp -R ai-init-internal/poc-collector/.github/agents .github/
+          cp -R ai-init-internal/poc-collector/docs/sdd docs/
+          cp -R ai-init-internal/poc-collector/docs/wiki docs/
+          cp ai-init-internal/poc-collector/docs/ONBOARDING.md docs/ONBOARDING.md
       - name: Check optional review credential
         id: review_key
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_INIT_CONTEXT_AVAILABLE: ${{ steps.context_access.outputs.available }}
         run: |
+          if [ "$AI_INIT_CONTEXT_AVAILABLE" != true ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "AI review skipped: configure the AI_INIT_INTERNAL_TOKEN repository secret to read private project context."
+            exit 0
+          fi
+          context=(AGENTS.md docs/sdd/constitution.md .github/prompts/ci-review.prompt.md \
+            .github/agents/reviewer.agent.md .github/agents/qa.agent.md .github/agents/security.agent.md)
+          for file in "${context[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "configured=false" >> "$GITHUB_OUTPUT"
+              echo "AI review skipped: centrally managed context is missing ($file)."
+              exit 0
+            fi
+          done
           if [ -n "$ANTHROPIC_API_KEY" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"
           else echo "configured=false" >> "$GITHUB_OUTPUT"; echo "AI review skipped: ANTHROPIC_API_KEY is not configured."; fi
       - uses: actions/setup-node@v4
@@ -88,7 +126,7 @@ jobs:
         run: |
           npm install -g @anthropic-ai/claude-code@2.1.322
           claude -p "Follow .github/prompts/ci-review.prompt.md exactly. The base to diff against is $BASE. Write the review to ai-review.md and do nothing else." \
-            --model "claude-sonnet-5" \
+            --model "sonnet" \
             --max-turns 40 \
             --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*)" \
             > ai-review.log
