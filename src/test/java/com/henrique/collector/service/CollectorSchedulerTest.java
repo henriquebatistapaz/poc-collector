@@ -34,7 +34,7 @@ class CollectorSchedulerTest {
         var registry = new SourceRegistry();
         var collector = new CollectorService(registry, new GoogleNewsCollector(fetcher, parser),
                 new GoogleAlertsCollector(fetcher, parser, new GoogleAlertsUrlPolicy()),
-                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy(resolver)), null);
+                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy(resolver)));
         var store = new CollectorStateStore(temporaryDirectory.resolve("collector.json"));
         var secretBox = new SecretBox(new byte[32]);
         Instant dueAt = Instant.now().minusSeconds(5);
