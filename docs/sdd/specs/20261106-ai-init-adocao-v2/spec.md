@@ -73,4 +73,4 @@ Trazer este projeto para a versão atual do ai-init, aplicando só o que faz sen
 - Remover os hooks do `.claude/settings.json` e do `.cursor/hooks.json` e apagar o job de CI. Os arquivos do ai-init continuam no `ai-init-internal`.
 
 ## 11. References
-- ai-init (develop): assets/guardrails, assets/automation, assets/templates/harness, assets/templates/agent-env, assets/templates/mcp.
+- ai-init-internal: managed prompts, agents, skills, guardrails, adapters, and GitHub Actions assets at ai-init 85c264c.

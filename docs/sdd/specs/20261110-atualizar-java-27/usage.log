@@ -2,3 +2,5 @@
 2026-11-10T23:21:09-03:00 | /next + @qa | REVISE SPEC | [BLOCKER] AC-02/§9.1: definir casos concretos de feed malformado, timeout e erro de OAuth com fixtures. Identificar a revisão do artefato carregado pelo runner, incluindo como verificar a exceção temporária de bytecode. [IMPORTANT] §10/AC-04: identificar a revisão, imagem ou artefato anterior aplicável e o smoke a repetir após o retorno.
 2026-11-11T05:54:17-03:00 | /test-plan | model: gpt-6.1-sol | in: ~4000 | out: ~3000
 2026-11-11T07:08:00-03:00 | /implement-spec | Java 27.0.1 + Maven 3.9.16: mvn clean install aprovado; 43 testes, release 21 por exceção de compatibilidade. Consumer runner/dashboard compilado; Docker/PostgreSQL pendente.
+2026-11-11T12:50:32-03:00 | /next → /validate-implementation | Baseline Java 21 e candidata Java 27 instalados; plano atualizado. Docker/rollback/portas pendentes no test-plan.md.
+2026-11-11T16:55:20-03:00 | /next | Main atual Java 27: `mvn -B -ntp clean verify` passou com 43 testes. Smoke local API: health 200, /v1/sources sem bearer 401, com bearer 200; bind 127.0.0.1. PRs Java 27 já integrados em main (#11/#12/#18).
