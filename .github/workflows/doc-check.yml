@@ -21,8 +21,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check access to shared ai-init context
+        id: context_access
+        env:
+          AI_INIT_INTERNAL_TOKEN: ${{ secrets.AI_INIT_INTERNAL_TOKEN }}
+        run: |
+          if [ -n "$AI_INIT_INTERNAL_TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"
+          else echo "available=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.context_access.outputs.available == 'true'
+        with:
+          repository: henriquebatistapaz/ai-init-internal
+          token: ${{ secrets.AI_INIT_INTERNAL_TOKEN }}
+          path: ai-init-internal
+      - name: Load centrally managed project context
+        if: steps.context_access.outputs.available == 'true'
+        run: |
+          cp ai-init-internal/poc-collector/AGENTS.md AGENTS.md
+          cp ai-init-internal/poc-collector/SPEC.md SPEC.md
+          mkdir -p .github docs
+          cp -R ai-init-internal/poc-collector/.github/prompts .github/
+          cp -R ai-init-internal/poc-collector/.github/agents .github/
+          cp -R ai-init-internal/poc-collector/docs/sdd docs/
+          cp -R ai-init-internal/poc-collector/docs/wiki docs/
+          cp ai-init-internal/poc-collector/docs/ONBOARDING.md docs/ONBOARDING.md
       - name: AGENTS.md and wiki describe the repo as it is
-        run: bash .ai-init/doc-check.sh
+        run: |
+          if [ -L AGENTS.md ] && [ ! -e AGENTS.md ]; then
+            echo "AGENTS.md is a broken link to ai-init-internal." >&2; exit 1
+          fi
+          if [ ! -e AGENTS.md ]; then
+            echo "Doc check skipped: ai-init context is centrally managed and is not present in this GitHub checkout."
+            exit 0
+          fi
+          bash .ai-init/doc-check.sh
       # [agent] Optional: also EXECUTE the AGENTS.md commands marked `# doc-check: run`.
       # Needs the runtime (same setup as ci.yml) — keep it only for fast, side-effect-free commands.
       # - run: bash .ai-init/doc-check.sh --run
