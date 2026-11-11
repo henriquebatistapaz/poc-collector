@@ -1,6 +1,6 @@
 # Deploy e execução local
 
-CLI Java para coletar links de fontes públicas e da API do Reddit quando autorizada.
+CLI Java para coletar links de fontes RSS/Atom públicas. O suporte ao Reddit foi cancelado e removido.
 
 ## Validação local
 
