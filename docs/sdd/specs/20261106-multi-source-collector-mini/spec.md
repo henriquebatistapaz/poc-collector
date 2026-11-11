@@ -10,7 +10,7 @@ The initial request proposed a small, private service for public links and limit
 
 1. Google News
 2. Google Alerts
-3. Reddit (official OAuth; live access gated by Reddit approval)
+3. Reddit (later canceled by the owner; see the cancellation record)
 4. Issuu (unverified; unavailable)
 5. WordPress
 
@@ -95,7 +95,7 @@ Recommended starting point: user-supplied public WordPress RSS/Atom feeds. Add U
 
 ### Phase 2 — Additional permitted sources
 
-This historical plan has been superseded: Google News, user-provided Google Alerts feeds, and WordPress feeds are implemented. Reddit OAuth and the official API reader are implemented but remain disabled until Reddit access approval and runtime credentials are available. Issuu remains unverified. Mercado Livre was removed from scope.
+This historical plan has been superseded: Google News, user-provided Google Alerts feeds, and WordPress feeds are implemented. Reddit support was canceled by the owner on 2026-11-11 and removed; Issuu remains unavailable for public discovery. Mercado Livre was removed from scope.
 
 ### Phase 3 — API and persistence
 
@@ -109,7 +109,11 @@ Define a small OpenAPI contract and persistence model only after collection beha
 - The repository remains private; `/docs/` and AI-Init generated files are ignored by Git.
 - A first implementation slice cannot begin until source feasibility and scope are approved.
 
-## 9. References
+## 9. Cancellation update (2026-11-11)
+
+The owner canceled the Reddit integration. Its OAuth/API implementation was removed. Existing locally stored items remain readable; existing Reddit schedules are discarded during state loading. A future reintroduction requires a new approved spec.
+
+## 10. References
 
 - [WordPress: Feeds](https://developer.wordpress.org/advanced-administration/wordpress/feeds/) — documents built-in RSS and Atom feed types and URLs.
 - [Google Search Help: Create an alert](https://support.google.com/websearch/answer/4815696) — documents alert creation and notification settings; does not define an RSS API.
