@@ -29,7 +29,7 @@ class CollectorApiServerTest {
     @Test
     void exposesOpenApiAndProtectsAndManagesScheduledFeeds() throws Exception {
         var registry = new SourceRegistry();
-        var collector = new CollectorService(registry, null, null, null, null);
+        var collector = new CollectorService(registry, null, null, null);
         var store = new CollectorStateStore(temporaryDirectory.resolve("collector.json"));
         var secretBox = new SecretBox(ENCRYPTION_KEY);
         try (var api = new CollectorApiServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
@@ -56,6 +56,7 @@ class CollectorApiServerTest {
             HttpResponse<String> sources = authorized(client, base.resolve("/v1/sources"), "GET", null);
             assertEquals(200, sources.statusCode());
             assertTrue(sources.body().contains("\"source\":\"ISSUU\",\"status\":\"UNAVAILABLE\""));
+            assertFalse(sources.body().contains("REDDIT"));
 
             HttpResponse<String> created = authorized(client, base.resolve("/v1/feeds"), "POST",
                     "{\"source\":\"WORDPRESS\",\"input\":\"https://example.org/feed/\",\"intervalSeconds\":3600}");
@@ -75,6 +76,13 @@ class CollectorApiServerTest {
             HttpResponse<String> disabledIssuu = authorized(client, base.resolve("/v1/feeds"), "POST",
                     "{\"source\":\"ISSUU\",\"input\":\"https://example.org/feed/\"}");
             assertEquals(422, disabledIssuu.statusCode());
+
+            HttpResponse<String> cancelledRedditCollection = authorized(client, base.resolve("/v1/collections"),
+                    "POST", "{\"source\":\"REDDIT\",\"input\":\"java\"}");
+            assertEquals(422, cancelledRedditCollection.statusCode());
+            HttpResponse<String> cancelledRedditSchedule = authorized(client, base.resolve("/v1/feeds"), "POST",
+                    "{\"source\":\"REDDIT\",\"input\":\"java\"}");
+            assertEquals(422, cancelledRedditSchedule.statusCode());
         }
     }
 
