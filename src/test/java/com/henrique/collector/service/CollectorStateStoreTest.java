@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.henrique.collector.feed.FeedItem;
 import com.henrique.collector.source.CollectorSource;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
@@ -43,5 +44,24 @@ class CollectorStateStoreTest {
 
         assertEquals(1, store.deleteExpired(now.minusSeconds(86_400)));
         assertTrue(store.items(null, 10).isEmpty());
+    }
+
+    @Test
+    void keepsHistoricalRedditItemsButCancelsRedditSchedulesOnLoad() throws Exception {
+        Path file = temporaryDirectory.resolve("collector.json");
+        Files.writeString(file, """
+                {"items":[{"source":"REDDIT","sourceId":"legacy-1","title":"Old item",
+                "link":"https://reddit.com/r/java/comments/legacy","publishedAt":null,
+                "retrievedAt":"2026-11-11T12:00:00Z"}],
+                "feeds":[{"id":"reddit-feed","source":"REDDIT","encryptedInput":"ciphertext",
+                "intervalSeconds":3600,"nextRunAt":"2026-11-11T12:00:00Z","enabled":true,
+                "lastStatus":"NEVER_RUN"}]}
+                """);
+
+        var store = new CollectorStateStore(file);
+
+        assertEquals(CollectorSource.REDDIT, store.items(null, 10).getFirst().source());
+        assertTrue(store.feeds().isEmpty());
+        assertTrue(Files.readString(file).contains("\"feeds\":[]"));
     }
 }
