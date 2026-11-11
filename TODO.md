@@ -21,7 +21,7 @@
 
 ## Later implementation slices
 
-- [x] Create a Java 21 / Maven command-line collector.
+- [x] Create a Java 27 / Maven command-line collector.
 - [x] Add RSS/Atom parser tests, source-specific tests, bounded HTTP fetcher, and URL safety checks.
 - [ ] Revisit the Google News RSS URL format if Google changes the undocumented endpoint.
 - [ ] Confirm whether this Google Alerts account exposes an RSS feed; keep the URL in a secret store/local environment only.
