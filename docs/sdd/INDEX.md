@@ -26,4 +26,4 @@ Rules: agents NEVER set `Approved`. A spec that needs rework after approval goes
 | [`20261106-api-rest-openapi/`](specs/20261106-api-rest-openapi/spec.md) | #9 | Done | API local autenticada com bearer key e OpenAPI; `127.0.0.1` por padrão |
 | [`20261106-ai-init-adocao-v2/`](specs/20261106-ai-init-adocao-v2/spec.md) | — | Done | Adoção v2 `85c264c` integrada em develop (#19) e main (#20); validação local passou com 43 testes e doc-check sem avisos |
 | [`20261110-atualizar-java-27/`](specs/20261110-atualizar-java-27/spec.md) | poc-collector#11, #12, #18 | Done | Java 27 standalone integrado em main; `mvn -B -ntp clean verify` passou com 43 testes; API smoke verificou health 200, auth 401/200 e bind loopback |
-| [`20261111-poc-collector-webscrapper/`](specs/20261111-poc-collector-webscrapper/spec.md) | — | Approved | Cópia de referência; spec canônica e test plan no contexto `ai-init-internal/poc-collector-webscrapper` |
+| [`20261111-poc-collector-webscrapper/`](specs/20261111-poc-collector-webscrapper/spec.md) | — | In progress | Referência para implementação no contexto próprio `ai-init-internal/poc-collector-webscrapper` |
