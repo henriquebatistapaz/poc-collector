@@ -17,9 +17,11 @@ public final class GitLabCollector implements FeedCollector {
         URI uri = RestJsonSupport.appendQuery(client.baseUri(), Map.of("search", term, "per_page", "30"));
         return RestJsonSupport.items(client.get(uri, Map.of()), null, CollectorSource.GITLAB, node -> {
             String id = RestJsonSupport.value(node, "id");
-            String name = RestJsonSupport.cleanTitle(RestJsonSupport.first(node, "name_with_namespace", "name"));
+            String nameWithNamespace = RestJsonSupport.cleanTitle(RestJsonSupport.value(node, "name_with_namespace"));
+            String name = RestJsonSupport.cleanTitle(RestJsonSupport.value(node, "name"));
             String description = RestJsonSupport.cleanTitle(RestJsonSupport.value(node, "description"));
-            String title = name == null ? null : RestJsonSupport.cleanTitle(description == null ? name : name + " — " + description);
+            String title = nameWithNamespace != null ? nameWithNamespace
+                    : name == null ? null : RestJsonSupport.cleanTitle(description == null ? name : name + " — " + description);
             URI link = RestJsonSupport.safeUri(RestJsonSupport.value(node, "web_url"));
             return RestJsonSupport.item(CollectorSource.GITLAB, id, title, link,
                     RestJsonSupport.instant(RestJsonSupport.value(node, "last_activity_at")));
