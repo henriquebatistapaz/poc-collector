@@ -5,7 +5,7 @@
 - [x] Define the active source set and record feasibility decisions, including Reddit cancellation.
 - [x] Set privacy, terms-of-service, robots, rate-limit, and secret-handling constraints.
 - [x] Review source capability for the first feed slice; keep undocumented or OAuth-only routes gated.
-- [x] Add seven public REST JSON sources with local-fixture tests and bounded HTTP transport.
+- [x] Add ten public REST JSON sources with local-fixture tests and bounded HTTP transport.
 - [x] Remove Google Alerts collection and scheduling support.
 
 ## Before implementation

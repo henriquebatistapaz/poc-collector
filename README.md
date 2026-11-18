@@ -1,6 +1,6 @@
 # Multi-Source Collector Mini
 
-Java 27 / Maven collector for public RSS/Atom feeds and seven public REST JSON sources. It reads Google News search RSS, public WordPress feeds, Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, and TabNews. The returned items contain source, stable ID, plain-text title, safe link, and timestamps.
+Java 27 / Maven collector for public RSS/Atom feeds and ten public REST JSON sources. It reads Google News search RSS, public WordPress feeds, Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews, Wikipedia, GitLab and Lobsters. The returned items contain source, stable ID, plain-text title, safe link, and timestamps.
 
 ## Build and tests
 
@@ -17,7 +17,7 @@ java -jar target/poc-collector-0.1.0-SNAPSHOT.jar dev-to spring
 java -jar target/poc-collector-0.1.0-SNAPSHOT.jar tabnews relevant
 ```
 
-Supported REST source commands are `mastodon`, `lemmy`, `dev-to`, `hacker-news`, `stack-exchange`, `github`, and `tabnews`. DEV.to and TabNews accept `@username`; TabNews also accepts `relevant`, `new`, `old`, or a title keyword. REST requests use fixed provider hosts, a 10-second timeout, a 2 MiB body limit, gzip support, no redirects, and a fixed User-Agent. Inputs never select a host.
+Supported REST source commands are `mastodon`, `lemmy`, `dev-to`, `hacker-news`, `stack-exchange`, `github`, `tabnews`, `wikipedia`, `gitlab`, and `lobsters`. DEV.to and TabNews accept `@username`; TabNews also accepts `relevant`, `new`, `old`, or a title keyword. Lobsters accepts an alphanumeric tag or `hottest`. REST requests use fixed provider hosts, a 10-second timeout, a 2 MiB body limit, gzip support, no redirects, and a fixed User-Agent. Inputs never select a host.
 
 For a public WordPress tag feed:
 
@@ -55,7 +55,7 @@ Scheduled source inputs are encrypted at rest. Losing or changing `COLLECTOR_SEC
 
 - **Google News:** search RSS with free-text keywords; endpoint is undocumented and behavior may change.
 - **WordPress:** public WordPress.com tag RSS feeds.
-- **Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews:** public JSON APIs without API keys, using fixed official hosts and conservative request limits.
+- **Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews, Wikipedia, GitLab, Lobsters:** public JSON APIs without API keys, using fixed official hosts and conservative request limits.
 - **Reddit:** canceled by the owner; collection support is removed while historical items remain readable.
 - **Issuu:** unavailable for public discovery; no scraping or hidden endpoints are used.
 
