@@ -8,7 +8,7 @@ The canonical private project context, including SPEC.md, is maintained separate
 
 Standalone Java 27 / Maven command-line collector and local REST service. The runtime uses JDK HttpServer, Jackson, and JUnit 5; it does not use Spring Boot. Source adapters, RSS/Atom parsing, deduplication, local JSON persistence, encrypted schedules, retention, and an authenticated REST/OpenAPI API are implemented.
 
-Enabled sources: Google News search RSS, user-provided Google Alerts RSS where available, and user-supplied public WordPress RSS/Atom. Reddit support was canceled by the owner on 2026-11-11 and its adapter was removed. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
+Enabled sources: Google News search RSS, public WordPress.com tag feeds, and public REST APIs for Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub and TabNews. Google Alerts collection and scheduling were removed; preserve historical items and runs. Reddit support was canceled by the owner on 2026-11-11 and its adapter was removed. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
 
 ## Build, test, and run
 
@@ -36,7 +36,7 @@ The API binds to `127.0.0.1:8090` by default. `/health` and `/openapi.json` are 
 
 - Keep source adapters small and registered through `SourceRegistry`.
 - WordPress requests must use HTTPS and public DNS addresses; preserve the DNS rebinding checks and their tests.
-- Treat Google Alerts feed URLs, API keys, and encryption keys as secrets. Never store them in Git, shell history, logs, or screenshots.
+- Treat API keys and encryption keys as secrets. Never store them in Git, shell history, logs, or screenshots. REST source hosts must remain fixed; preserve timeout, response-size, gzip, and redirect restrictions.
 - Preserve read access to previously collected Reddit items in existing data files; never add Reddit collection back without a new approved spec.
 - The local JSON store supports one process. Mount a persistent volume for container use; do not share the same data file across processes.
 - Scheduled feed inputs are encrypted with AES-GCM. Preserve the same `COLLECTOR_SECRET_KEY` with its data file; changing it makes stored schedules unreadable.
