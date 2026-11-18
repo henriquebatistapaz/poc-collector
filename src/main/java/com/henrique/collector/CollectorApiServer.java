@@ -166,8 +166,8 @@ public final class CollectorApiServer implements AutoCloseable {
             throw new IllegalArgumentException("intervalSeconds must be from 300 to 86400.");
         }
         SourceCapability capability = collector.sources().stream()
-                .filter(candidate -> candidate.source() == source).findFirst().orElse(null);
-        if (capability == null || capability.status() == CapabilityStatus.UNAVAILABLE
+                .filter(candidate -> candidate.source() == source).findFirst().orElseThrow();
+        if (capability.status() == CapabilityStatus.UNAVAILABLE
                 || capability.status() == CapabilityStatus.UNVERIFIED) {
             throw new SourceAccessException(source + " collector is disabled.");
         }
@@ -276,8 +276,7 @@ public final class CollectorApiServer implements AutoCloseable {
         var registry = new SourceRegistry();
         var collector = new CollectorService(registry,
                 new GoogleNewsCollector(fetcher, parser),
-                new GoogleAlertsCollector(fetcher, parser, new GoogleAlertsUrlPolicy()),
-                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy()));
+                new WordPressFeedCollector(fetcher, parser));
         SecretBox secretBox = SecretBox.fromEnvironment(environment.get("COLLECTOR_SECRET_KEY"));
         String apiKey = environment.get("COLLECTOR_API_KEY");
         long retentionDays = parseLong(environment.getOrDefault("COLLECTOR_RETENTION_DAYS", "30"), "COLLECTOR_RETENTION_DAYS");
