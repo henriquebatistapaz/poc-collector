@@ -50,7 +50,7 @@ class RestJsonCollectorsTest {
 
     @AfterEach void stopServer() { server.stop(0); }
 
-    @Test void parsesAllSevenSourcesAndBuildsExpectedRequests() {
+    @Test void parsesAllTenPublicRestSourcesAndBuildsExpectedRequests() {
         response = """
                 [{"id":"m1","content":"<p>Java <b>JDK 27</b> &amp; tests</p><script>alert(1)</script>","url":null,"uri":"https://mastodon.social/status/1","created_at":"2026-11-18T12:00:00Z"}]
                 """;
@@ -120,9 +120,15 @@ class RestJsonCollectorsTest {
 """;
         var gitlab = new GitLabCollector(endpoint("/gitlab")).collect("linux").getFirst();
         assertEquals("456", gitlab.sourceId());
-        assertEquals("torvalds / Linux Kernel — Core OS", gitlab.title());
+        assertEquals("torvalds / Linux Kernel", gitlab.title());
         assertEquals("https://gitlab.com/torvalds/linux", gitlab.link().toString());
         assertTrue(requestPath.contains("search=linux"));
+
+        response = """
+                [{"id":457,"name":"Linux Kernel","description":"Core OS","web_url":"https://gitlab.com/torvalds/linux"}]
+                """;
+        var gitlabFallback = new GitLabCollector(endpoint("/gitlab")).collect("linux").getFirst();
+        assertEquals("Linux Kernel — Core OS", gitlabFallback.title());
 
         response = """
 [{"short_id":"lob1","title":"Lobsters discussion","url":"https://example.org/article","comments_url":"https://lobste.rs/s/lob1","created_at":"2026-11-18T12:00:00Z"}]
@@ -133,13 +139,16 @@ class RestJsonCollectorsTest {
         assertEquals("https://example.org/article", lobsters.link().toString());
         assertTrue(requestPath.contains("/t/rust.json"));
 
-        assertEquals(10, requests.get());
+        assertEquals(11, requests.get());
     }
 
     @Test void rejectsInvalidInputsBeforeSendingRequests() {
         assertThrows(IllegalArgumentException.class, () -> new MastodonCollector(endpoint("/mastodon")).collect("#"));
         assertThrows(IllegalArgumentException.class, () -> new DevToCollector(endpoint("/devto")).collect("@"));
         assertThrows(IllegalArgumentException.class, () -> new TabNewsCollector(endpoint("/tabnews")).collect("@bad/name"));
+        assertThrows(IllegalArgumentException.class, () -> new WikipediaCollector(endpoint("/wiki")).collect(" "));
+        assertThrows(IllegalArgumentException.class, () -> new GitLabCollector(endpoint("/gitlab")).collect(" "));
+        assertThrows(IllegalArgumentException.class, () -> new LobstersCollector(endpoint("/lobsters")).collect("tag-with-hyphen"));
         assertEquals(0, requests.get());
     }
 
@@ -148,7 +157,25 @@ class RestJsonCollectorsTest {
                 () -> new GitHubCollector(endpoint("/github")).collect("x".repeat(201)));
         assertThrows(IllegalArgumentException.class,
                 () -> new GitHubCollector(URI.create("https://attacker.example/search")).collect("java"));
+        assertThrows(IllegalArgumentException.class, () -> new WikipediaCollector(endpoint("/wiki")).collect("x".repeat(201)));
+        assertThrows(IllegalArgumentException.class, () -> new GitLabCollector(endpoint("/gitlab")).collect("x".repeat(201)));
+        assertThrows(IllegalArgumentException.class, () -> new LobstersCollector(endpoint("/lobsters")).collect("x".repeat(101)));
         assertEquals(0, requests.get());
+    }
+
+    @Test void acceptsMinimumAndMaximumInputsForNewSources() {
+        response = "{\"query\":{\"search\":[]}}";
+        assertTrue(new WikipediaCollector(endpoint("/wiki")).collect("x").isEmpty());
+        assertTrue(new WikipediaCollector(endpoint("/wiki")).collect("x".repeat(200)).isEmpty());
+        response = "[]";
+        assertTrue(new GitLabCollector(endpoint("/gitlab")).collect("x").isEmpty());
+        assertTrue(new GitLabCollector(endpoint("/gitlab")).collect("x".repeat(200)).isEmpty());
+        assertTrue(new LobstersCollector(endpoint("/")).collect("").isEmpty());
+        assertTrue(requestPath.contains("/hottest.json"));
+        assertTrue(new LobstersCollector(endpoint("/")).collect("hottest").isEmpty());
+        assertTrue(new LobstersCollector(endpoint("/")).collect("a").isEmpty());
+        assertTrue(new LobstersCollector(endpoint("/")).collect("a".repeat(100)).isEmpty());
+        assertEquals(8, requests.get());
     }
 
     @Test void truncatesTitlesAfterHtmlCleanup() {
@@ -169,13 +196,30 @@ class RestJsonCollectorsTest {
         assertTrue(new HackerNewsCollector(endpoint("/hn")).collect("empty").isEmpty());
     }
 
+    @Test void skipsMalformedItemsAndHandlesEmptyResponsesForNewSources() {
+        response = "[]";
+        assertTrue(new GitLabCollector(endpoint("/gitlab")).collect("java").isEmpty());
+        assertTrue(new LobstersCollector(endpoint("/")).collect("hottest").isEmpty());
+        response = """
+                [{"short_id":"safe1","title":"<script>alert(1)</script>Safe title","url":"https://example.test/story"},
+                 {"short_id":"unsafe","title":"Unsafe","url":"javascript:alert(1)"},
+                 {"short_id":null,"title":null,"url":"data:text/html,boom"}]
+                """;
+        var items = new LobstersCollector(endpoint("/")).collect("hottest");
+        assertEquals(1, items.size());
+        assertEquals("Safe title", items.getFirst().title());
+        assertEquals("https://example.test/story", items.getFirst().link().toString());
+    }
+
     @Test void failsSafelyForHttpErrorsAndMalformedRootWithoutLeakingInputOrBody() {
-        responseCode = 429;
-        response = "rate limit: secret-term";
-        SourceAccessException httpError = assertThrows(SourceAccessException.class,
-                () -> new GitHubCollector(endpoint("/github")).collect("secret-term"));
-        assertFalse(httpError.getMessage().contains("secret-term"));
-        assertFalse(httpError.getMessage().contains("rate limit"));
+        response = "upstream body private-search-term";
+        for (int status : new int[]{401, 403, 404, 429, 500}) {
+            responseCode = status;
+            SourceAccessException httpError = assertThrows(SourceAccessException.class,
+                    () -> new GitLabCollector(endpoint("/gitlab")).collect("private-search-term"));
+            assertFalse(httpError.getMessage().contains("private-search-term"));
+            assertFalse(httpError.getMessage().contains("upstream body"));
+        }
         responseCode = 200;
         response = "{not-json";
         assertThrows(SourceAccessException.class,
