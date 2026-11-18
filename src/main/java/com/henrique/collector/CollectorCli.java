@@ -11,27 +11,31 @@ public final class CollectorCli {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java -jar poc-collector.jar <google-news|google-alerts|wordpress> [query]");
+            System.err.println("Usage: java -jar poc-collector.jar <google-news|wordpress|mastodon|lemmy|dev-to|hacker-news|stack-exchange|github|tabnews> [query]");
             System.exit(2);
         }
         var fetcher = new JdkHttpFeedFetcher();
         var parser = new RssFeedParser();
         var service = new CollectorService(new SourceRegistry(),
                 new GoogleNewsCollector(fetcher, parser),
-                new GoogleAlertsCollector(fetcher, parser, new GoogleAlertsUrlPolicy()),
-                new WordPressFeedCollector(fetcher, parser, new PublicHttpsFeedUrlPolicy()));
+                new WordPressFeedCollector(fetcher, parser));
         try {
             CollectorSource source = switch (args[0].toLowerCase()) {
                 case "google-news" -> CollectorSource.GOOGLE_NEWS;
-                case "google-alerts" -> CollectorSource.GOOGLE_ALERTS;
                 case "wordpress" -> CollectorSource.WORDPRESS;
+                case "mastodon" -> CollectorSource.MASTODON;
+                case "lemmy" -> CollectorSource.LEMMY;
+                case "dev-to" -> CollectorSource.DEV_TO;
+                case "hacker-news" -> CollectorSource.HACKER_NEWS;
+                case "stack-exchange" -> CollectorSource.STACK_EXCHANGE;
+                case "github" -> CollectorSource.GITHUB;
+                case "tabnews" -> CollectorSource.TABNEWS;
                 case "issuu" -> CollectorSource.ISSUU;
-                default -> throw new IllegalArgumentException("Unknown source. Use google-news, google-alerts, or wordpress.");
+                default -> throw new IllegalArgumentException("Unknown or unavailable source.");
             };
             String input = switch (source) {
-                case GOOGLE_NEWS -> String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
-                case GOOGLE_ALERTS -> requiredEnvironment("GOOGLE_ALERTS_FEED_URL");
-                case WORDPRESS -> requiredEnvironment("WORDPRESS_FEED_URL");
+                case GOOGLE_NEWS, WORDPRESS, MASTODON, LEMMY, DEV_TO, HACKER_NEWS, STACK_EXCHANGE, GITHUB, TABNEWS ->
+                        String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
                 default -> "";
             };
             List<FeedItem> items = service.collect(source, input);
@@ -40,11 +44,5 @@ public final class CollectorCli {
             System.err.println(e.getMessage());
             System.exit(1);
         }
-    }
-
-    private static String requiredEnvironment(String name) {
-        String value = System.getenv(name);
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(name + " environment variable is required.");
-        return value;
     }
 }
