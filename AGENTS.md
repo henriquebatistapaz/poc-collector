@@ -8,7 +8,7 @@ The canonical private project context, including SPEC.md, is maintained separate
 
 Standalone Java 27 / Maven command-line collector and local REST service. The runtime uses JDK HttpServer, Jackson, and JUnit 5; it does not use Spring Boot. Source adapters, RSS/Atom parsing, deduplication, local JSON persistence, encrypted schedules, retention, and an authenticated REST/OpenAPI API are implemented.
 
-Enabled sources: Google News search RSS, public WordPress.com tag feeds, and public REST APIs for Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub and TabNews. Google Alerts collection and scheduling were removed; preserve historical items and runs. Reddit support was canceled by the owner on 2026-11-11 and its adapter was removed. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
+Enabled sources: Google News search RSS, public WordPress.com tag feeds, and public REST APIs for Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews, Wikipedia, GitLab and Lobsters. Google Alerts collection and scheduling were removed; preserve historical items and runs. Reddit support was canceled by the owner on 2026-11-11 and its adapter was removed. Issuu public discovery remains unavailable; do not use scraping or undocumented endpoints.
 
 ## Build, test, and run
 

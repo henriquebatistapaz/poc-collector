@@ -12,10 +12,11 @@ public final class LobstersCollector implements FeedCollector {
     public LobstersCollector(URI endpoint) { this.client = new RestJsonClient(endpoint); }
 
     @Override public List<FeedItem> collect(String input) {
-        String value = RestJsonSupport.requiredInput(input, 100, "Lobsters tag").toLowerCase(java.util.Locale.ROOT);
+        String value = input == null || input.isBlank() ? "hottest"
+                : RestJsonSupport.requiredInput(input, 100, "Lobsters tag").toLowerCase(java.util.Locale.ROOT);
         String path;
         if (value.equals("hottest")) path = "/hottest.json";
-        else if (value.matches("[a-z0-9_-]{1,100}")) path = "/t/" + value + ".json";
+        else if (value.matches("[a-z0-9]{1,100}")) path = "/t/" + value + ".json";
         else throw new IllegalArgumentException("Invalid Lobsters tag.");
         String base = client.baseUri().toASCIIString();
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
