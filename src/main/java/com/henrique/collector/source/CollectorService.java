@@ -10,18 +10,42 @@ public final class CollectorService {
     private final Map<CollectorSource, FeedCollector> collectors = new EnumMap<>(CollectorSource.class);
 
     public CollectorService(SourceRegistry registry, GoogleNewsCollector googleNews,
-                            GoogleAlertsCollector googleAlerts, WordPressFeedCollector wordpress) {
+                            WordPressFeedCollector wordpress) {
+        this(registry, googleNews, wordpress, new MastodonCollector(), new LemmyCollector(), new DevToCollector(),
+                new HackerNewsCollector(), new StackExchangeCollector(), new GitHubCollector(), new TabNewsCollector(),
+                new WikipediaCollector(), new GitLabCollector(), new LobstersCollector());
+    }
+
+    public CollectorService(SourceRegistry registry, GoogleNewsCollector googleNews,
+                            WordPressFeedCollector wordpress, MastodonCollector mastodon, LemmyCollector lemmy,
+                            DevToCollector devTo, HackerNewsCollector hackerNews,
+                            StackExchangeCollector stackExchange, GitHubCollector github, TabNewsCollector tabNews) {
+        this(registry, googleNews, wordpress, mastodon, lemmy, devTo, hackerNews, stackExchange, github, tabNews,
+                new WikipediaCollector(), new GitLabCollector(), new LobstersCollector());
+    }
+
+    public CollectorService(SourceRegistry registry, GoogleNewsCollector googleNews,
+                            WordPressFeedCollector wordpress, MastodonCollector mastodon, LemmyCollector lemmy,
+                            DevToCollector devTo, HackerNewsCollector hackerNews,
+                            StackExchangeCollector stackExchange, GitHubCollector github, TabNewsCollector tabNews,
+                            WikipediaCollector wikipedia, GitLabCollector gitlab, LobstersCollector lobsters) {
         this.registry = registry;
         collectors.put(CollectorSource.GOOGLE_NEWS, googleNews);
-        collectors.put(CollectorSource.GOOGLE_ALERTS, googleAlerts);
         collectors.put(CollectorSource.WORDPRESS, wordpress);
+        collectors.put(CollectorSource.MASTODON, mastodon);
+        collectors.put(CollectorSource.LEMMY, lemmy);
+        collectors.put(CollectorSource.DEV_TO, devTo);
+        collectors.put(CollectorSource.HACKER_NEWS, hackerNews);
+        collectors.put(CollectorSource.STACK_EXCHANGE, stackExchange);
+        collectors.put(CollectorSource.GITHUB, github);
+        collectors.put(CollectorSource.TABNEWS, tabNews);
+        collectors.put(CollectorSource.WIKIPEDIA, wikipedia);
+        collectors.put(CollectorSource.GITLAB, gitlab);
+        collectors.put(CollectorSource.LOBSTERS, lobsters);
     }
 
     public List<FeedItem> collect(CollectorSource source, String input) {
         SourceCapability capability = registry.get(source);
-        if (capability == null) {
-            throw new SourceAccessException(source + " collector is not supported.");
-        }
         if (capability.status() == CapabilityStatus.UNAVAILABLE || capability.status() == CapabilityStatus.UNVERIFIED) {
             throw new SourceAccessException(source + " collector is disabled: " + capability.reason());
         }
