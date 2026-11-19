@@ -1,42 +1,35 @@
 # Multi-Source Collector Mini
 
-Private Java 27 / Maven 3.9 command-line collector for public RSS/Atom links. It reads Google News search RSS, a user-provided Google Alerts RSS URL, and public WordPress RSS/Atom feeds. Every returned item contains only source, stable ID, title, link, and timestamps. The JAR targets Java 27 bytecode and requires a Java 27 runtime.
+Java 27 / Maven collector for public RSS/Atom feeds and ten public REST JSON sources. It reads Google News search RSS, public WordPress feeds, Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews, Wikipedia, GitLab and Lobsters. The returned items contain source, stable ID, plain-text title, safe link, and timestamps.
 
 ## Build and tests
 
 ```bash
-mvn test
-mvn package
+mvn -B -ntp clean verify
 ```
 
 ## Run
 
 ```bash
 java -jar target/poc-collector-0.1.0-SNAPSHOT.jar google-news "open data Brazil"
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar mastodon java
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar dev-to spring
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar tabnews relevant
 ```
 
-For Google Alerts, create and configure an alert in the Google account first, then provide its RSS feed URL through the environment. The URL is a secret and must not be stored in shell history, Git, logs, or screenshots.
+Supported REST source commands are `mastodon`, `lemmy`, `dev-to`, `hacker-news`, `stack-exchange`, `github`, `tabnews`, `wikipedia`, `gitlab`, and `lobsters`. DEV.to and TabNews accept `@username`; TabNews also accepts `relevant`, `new`, `old`, or a title keyword. Lobsters accepts an alphanumeric tag or `hottest`. REST requests use fixed provider hosts, a 10-second timeout, a 2 MiB body limit, gzip support, no redirects, and a fixed User-Agent. Inputs never select a host.
+
+For a public WordPress tag feed:
 
 ```bash
-read -s GOOGLE_ALERTS_FEED_URL
-export GOOGLE_ALERTS_FEED_URL
-java -jar target/poc-collector-0.1.0-SNAPSHOT.jar google-alerts
-unset GOOGLE_ALERTS_FEED_URL
+java -jar target/poc-collector-0.1.0-SNAPSHOT.jar wordpress java
 ```
 
-For a public WordPress feed:
-
-```bash
-export WORDPRESS_FEED_URL='https://wordpress.org/news/feed/'
-java -jar target/poc-collector-0.1.0-SNAPSHOT.jar wordpress
-unset WORDPRESS_FEED_URL
-```
-
-The program prints a JSON array of normalized feed items to stdout. Google Alerts fetch/parse errors omit the secret URL. Feed requests have timeouts, a 1 MB response cap, and redirects disabled. WordPress URLs must use HTTPS and resolve only to public IP addresses.
+The CLI prints normalized JSON. RSS requests have bounded timeouts and redirects disabled. WordPress URLs must use HTTPS and resolve only to public IP addresses. Google News uses its observed search RSS URL shape; Google does not publish an official API contract for that endpoint, so it may change.
 
 ## REST API, schedules, and persistence
 
-The standalone API stores normalized items and encrypted scheduled-feed inputs in a local JSON data file. It runs as a single instance; set `COLLECTOR_DATA_FILE` to a persistent mounted volume when running in a container. Item retention defaults to 30 days and can be changed with `COLLECTOR_RETENTION_DAYS` (1–3650). Scheduled intervals are limited to 5 minutes–24 hours.
+The standalone API stores normalized items and encrypted scheduled inputs in a local JSON data file. It runs as a single instance; set `COLLECTOR_DATA_FILE` to a persistent mounted volume when running in a container. Item retention defaults to 30 days and can be changed with `COLLECTOR_RETENTION_DAYS` (1–3650). Scheduled intervals are limited to 5 minutes–24 hours.
 
 Set separate random values for the bearer API key and AES-GCM encryption key. The API key must be at least 32 bytes; the encryption key must be 32 bytes encoded as 64 hexadecimal characters.
 
@@ -48,25 +41,21 @@ export COLLECTOR_RETENTION_DAYS=30
 ./scripts/run-api.sh
 ```
 
-The API binds to `127.0.0.1:8090` by default. Keep that default for local use. For a remote deployment, place it behind a TLS-terminating reverse proxy before binding to a network interface. `GET /health` and `GET /openapi.json` are public; `/v1/*` requires `Authorization: Bearer $COLLECTOR_API_KEY`.
+The API binds to `127.0.0.1:8090` by default. Keep that default for local use. For remote deployment, use a TLS-terminating reverse proxy. `GET /health` and `GET /openapi.json` are public; `/v1/*` requires `Authorization: Bearer $COLLECTOR_API_KEY`.
 
-- `GET /v1/sources` — capability status for each source.
-- `POST /v1/collections` — collect once with `{"source":"WORDPRESS","input":"https://example.org/feed/"}`; returned items are deduplicated and stored.
-- `GET /v1/items?limit=100&source=WORDPRESS` — list stored items (limit 1–500).
-- `GET /v1/feeds` and `POST /v1/feeds` — list or schedule a collection. Create with `{"source":"WORDPRESS","input":"https://example.org/feed/","intervalSeconds":3600}`.
+- `GET /v1/sources` — capability status for each enabled or unavailable source.
+- `POST /v1/collections` — collect once with `{"source":"GITHUB","input":"spring boot"}`.
+- `GET /v1/items?limit=100&source=GITHUB` — list stored items (limit 1–500).
+- `GET /v1/feeds` and `POST /v1/feeds` — list or schedule a collection.
 - `DELETE /v1/feeds/{id}` — remove a schedule.
 
-Scheduled source inputs are encrypted at rest. Losing or changing `COLLECTOR_SECRET_KEY` makes existing schedules unreadable; restore the same key with the data file. Reddit support was canceled by the owner on 2026-11-11 and its connector was removed. Historical Reddit items remain readable from existing local data files; existing Reddit schedules are canceled when a data file is loaded. Issuu public discovery is unavailable and stays disabled.
+Scheduled source inputs are encrypted at rest. Losing or changing `COLLECTOR_SECRET_KEY` makes existing schedules unreadable; restore the same key with the data file. Existing collected items and run history remain readable. Google Alerts collection and scheduling have been removed; any remaining legacy records are not executed.
 
 ## Source status
 
-- **Google News:** implemented using its observed search RSS URL shape. Google does not provide an official API contract for this endpoint, so behavior may change.
-- **Google Alerts:** implemented only for a user-supplied feed URL if the user's account exposes one. Current Google help describes email alerts but does not document RSS delivery; no account feed URL is included in this repository.
-- **WordPress:** implemented using public RSS or Atom feeds supplied by the user.
-- **Reddit:** canceled by the owner on 2026-11-11; OAuth adapter, CLI command, and active source registration removed.
-- **Issuu:** unavailable for public discovery. Issuu's first-party [API SDK](https://github.com/issuu/issuu-api-sdk) uses an account token for authenticated account/publication operations; it does not document an unauthenticated public search/feed API. No scraping or hidden endpoints are used.
+- **Google News:** search RSS with free-text keywords; endpoint is undocumented and behavior may change.
+- **WordPress:** public WordPress.com tag RSS feeds.
+- **Mastodon, Lemmy, DEV.to, Hacker News, Stack Exchange, GitHub, TabNews, Wikipedia, GitLab, Lobsters:** public JSON APIs without API keys, using fixed official hosts and conservative request limits.
+- **Reddit:** canceled by the owner; collection support is removed while historical items remain readable.
+- **Issuu:** unavailable for public discovery; no scraping or hidden endpoints are used.
 
-
-## Integration planning
-
-This collector remains a standalone source adapter. A future integration with `poc-rss-collector` and `poc-collector-runner` is being explored in the private `poc-dashboard` repository; its contract and architecture are still undecided.
