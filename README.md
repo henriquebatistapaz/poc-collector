@@ -59,4 +59,3 @@ Scheduled source inputs are encrypted at rest. Losing or changing `COLLECTOR_SEC
 - **Reddit:** canceled by the owner; collection support is removed while historical items remain readable.
 - **Issuu:** unavailable for public discovery; no scraping or hidden endpoints are used.
 
-The canonical source evidence and capability matrix are maintained in the private ai-init-internal project context. This repository contains a versioned snapshot of managed AI-init files.

@@ -1,8 +1,0 @@
-{
-  "version": 1,
-  "hooks": {
-    "beforeShellExecution": [{ "command": "bash .ai-init/hooks/guard.sh pre-bash --cursor" }],
-    "afterFileEdit": [{ "command": "bash .ai-init/hooks/guard.sh post-edit --cursor" }],
-    "stop": [{ "command": "bash .ai-init/hooks/guard.sh stop --cursor" }]
-  }
-}
