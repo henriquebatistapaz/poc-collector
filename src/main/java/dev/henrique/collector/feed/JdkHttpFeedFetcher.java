@@ -80,40 +80,47 @@ public final class JdkHttpFeedFetcher implements FeedFetcher {
             tls.startHandshake();
 
             OutputStream output = tls.getOutputStream();
-            String path = uri.getRawPath();
-            if (path == null || path.isEmpty()) path = "/";
-            if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery();
-            String hostHeader = uri.getHost() + (port == 443 ? "" : ":" + port);
-            String request = "GET " + path + " HTTP/1.1\r\n"
-                    + "Host: " + hostHeader + "\r\n"
-                    + "Accept: application/rss+xml, application/atom+xml, application/xml, text/xml\r\n"
-                    + "Accept-Encoding: identity\r\n"
-                    + "Connection: close\r\n"
-                    + "User-Agent: MultiSourceCollectorMini/0.1 (+private project feed reader)\r\n\r\n";
-            output.write(request.getBytes(StandardCharsets.US_ASCII));
+            output.write(buildRequest(uri, port).getBytes(StandardCharsets.US_ASCII));
             output.flush();
 
             try (InputStream input = tls.getInputStream()) {
-                HttpHeaders response = readHeaders(input);
-                if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                    throw new FeedFetchException("Feed endpoint returned HTTP " + response.statusCode() + ".");
-                }
-                String contentEncoding = response.first("content-encoding");
-                if (contentEncoding != null && !contentEncoding.equalsIgnoreCase("identity")) {
-                    throw new FeedFetchException("Feed response used an unsupported content encoding.");
-                }
-                String transferEncoding = response.first("transfer-encoding");
-                if (transferEncoding != null) {
-                    if (!transferEncoding.equalsIgnoreCase("chunked")) {
-                        throw new FeedFetchException("Feed response used an unsupported transfer encoding.");
-                    }
-                    return readChunkedBody(input);
-                }
-                String contentLength = response.first("content-length");
-                if (contentLength != null) return readLengthBody(input, contentLength);
-                return readUntilEof(input);
+                return readResponseBody(input);
             }
         }
+    }
+
+    static String buildRequest(URI uri, int port) {
+        String path = uri.getRawPath();
+        if (path == null || path.isEmpty()) path = "/";
+        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery();
+        String hostHeader = uri.getHost() + (port == 443 ? "" : ":" + port);
+        return "GET " + path + " HTTP/1.1\r\n"
+                + "Host: " + hostHeader + "\r\n"
+                + "Accept: application/rss+xml, application/atom+xml, application/xml, text/xml\r\n"
+                + "Accept-Encoding: identity\r\n"
+                + "Connection: close\r\n"
+                + "User-Agent: MultiSourceCollectorMini/0.1 (+private project feed reader)\r\n\r\n";
+    }
+
+    static byte[] readResponseBody(InputStream input) throws IOException {
+        HttpHeaders response = readHeaders(input);
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new FeedFetchException("Feed endpoint returned HTTP " + response.statusCode() + ".");
+        }
+        String contentEncoding = response.first("content-encoding");
+        if (contentEncoding != null && !contentEncoding.equalsIgnoreCase("identity")) {
+            throw new FeedFetchException("Feed response used an unsupported content encoding.");
+        }
+        String transferEncoding = response.first("transfer-encoding");
+        if (transferEncoding != null) {
+            if (!transferEncoding.equalsIgnoreCase("chunked")) {
+                throw new FeedFetchException("Feed response used an unsupported transfer encoding.");
+            }
+            return readChunkedBody(input);
+        }
+        String contentLength = response.first("content-length");
+        if (contentLength != null) return readLengthBody(input, contentLength);
+        return readUntilEof(input);
     }
 
     private static HttpHeaders readHeaders(InputStream input) throws IOException {
